@@ -2,7 +2,7 @@ import { deleteCookie, eventHandler, H3Event, parseCookies, setCookie } from 'h3
 import { nanoid } from 'nanoid'
 import dayjs from 'dayjs'
 import { SameSiteOptions, Session, SessionOptions } from '../../../../types'
-import { dropStorageSession, getStorageSession, setStorageSession } from './storage'
+import { dropStorageSession, getStorageSession, hasStorageSession, setStorageSession } from './storage'
 import { processSessionIp, getHashedIpAddress } from './ipPinning'
 import { SessionExpired } from './exceptions'
 import { useRuntimeConfig } from '#imports'
@@ -71,7 +71,12 @@ const newSession = async (event: H3Event) => {
   const now = new Date()
 
   // (Re-)Set cookie
-  const sessionId = nanoid(sessionOptions.idLength)
+  let sessionId = nanoid(sessionOptions.idLength)
+
+  while (await hasStorageSession(sessionId)) {
+    sessionId = nanoid(sessionOptions.idLength)
+  }
+
   safeSetCookie(event, SESSION_COOKIE_NAME, sessionId, now)
 
   // Store session data in storage
